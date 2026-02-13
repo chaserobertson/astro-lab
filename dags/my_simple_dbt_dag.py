@@ -46,7 +46,7 @@ def my_simple_dbt_dag():
     query_table = SQLExecuteQueryOperator(
         task_id="query_table",
         conn_id="dbt_duckdb_conn",
-        sql="SELECT * FROM customers",
+        sql="SELECT * FROM main.customers",
     )
 
     chain(create_duckdb(), [transform_data, do_other_stuff], query_table)
