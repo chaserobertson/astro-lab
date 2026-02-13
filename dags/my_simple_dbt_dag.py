@@ -35,9 +35,9 @@ def my_simple_dbt_dag():
         profile_config=profile_config,
         operator_args={
             "vars": '{"my_name": {{ params.my_name }} }',
+            "queue": "dbt",
         },
         default_args={"retries": 5, "retry_delay": 10},
-        queue="dbt",
     )
 
     do_other_stuff = EmptyOperator(task_id="do_other_stuff")
