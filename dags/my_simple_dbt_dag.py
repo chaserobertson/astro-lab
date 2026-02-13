@@ -5,8 +5,9 @@ Simple DAG showing how to run a dbt project as a task group, using
 an Airflow connection and injecting a variable into the dbt project.
 """
 
-from airflow.sdk import dag, chain, task
+from airflow.sdk import dag, chain, task, Asset
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
 from cosmos import DbtTaskGroup, ProjectConfig, ProfileConfig
 
 DBT_PROJECT_PATH = "/usr/local/airflow/include/dbt"
@@ -14,14 +15,18 @@ DBT_PROJECT_PATH = "/usr/local/airflow/include/dbt"
 profile_config = ProfileConfig(
     profile_name="jaffle_shop",
     target_name="dev",
-    profiles_yml_filepath=f"{DBT_PROJECT_PATH}/profiles.yml"
+    profiles_yml_filepath=f"{DBT_PROJECT_PATH}/profiles.yml" # path to db set in profiles
 )
 
-@dag(params={"my_name": "Daffy"}, max_active_tasks=1)
+@dag(
+    params={"my_name": "Daffy"},
+    max_active_tasks=1,
+    schedule=Asset('color_rank') & Asset('current_astronauts')
+)
 def my_simple_dbt_dag():
     @task
     def create_duckdb():
-        "Create the dbt DB"
+        "Ensure the DB exists before running dbt"
         import duckdb
         duckdb.connect("include/dbt/duck.db")
 
@@ -35,13 +40,15 @@ def my_simple_dbt_dag():
         default_args={"retries": 2},
     )
 
+    do_other_stuff = EmptyOperator(task_id="do_other_stuff")
+
     query_table = SQLExecuteQueryOperator(
         task_id="query_table",
         conn_id="dbt_duckdb_conn",
         sql="SELECT * FROM customers",
     )
 
-    chain(create_duckdb(), transform_data, query_table)
+    chain(create_duckdb(), [transform_data, do_other_stuff], query_table)
 
 
 my_simple_dbt_dag()
