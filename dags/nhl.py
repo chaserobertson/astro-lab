@@ -2,7 +2,8 @@
 ## NHL API example DAG
 """
 
-from airflow.sdk import dag, task, TriggerRule
+from airflow.sdk import dag, task, TriggerRule, chain
+from airflow.providers.standard.operators.empty import EmptyOperator
 from pendulum import datetime
 import requests
 import json
@@ -17,9 +18,11 @@ import pendulum
 )
 def nhl():
     all_weeks = []
-    for week_stamp in pendulum.interval(pendulum.now().subtract(months=4), pendulum.now()).range("weeks"):
-        date_str = week_stamp.strftime("%Y-%m-%d")
-
+    dates = [
+        week_stamp.strftime("%Y-%m-%d")
+        for week_stamp in pendulum.interval(pendulum.now().subtract(months=4), pendulum.now()).range("weeks")
+    ]
+    for date_str in dates:
         @task(task_id=f"get_nhl_{date_str}")
         def get_nhl(date: str) -> list:
             "Get this week's game schedule from the nhl api (includes Olympic games!)"
@@ -67,6 +70,25 @@ def nhl():
             date = pendulum.parse(game["start_time"]).format("YYYY-MM-DD")
             print(f"  {date}  {game['away_team']} @ {game['home_team']}: {game['away_score']}-{game['home_score']}")
 
-    summary(all_weeks)
+    agg = summary(all_weeks)
+
+    fin = EmptyOperator(task_id="fin")
+
+    branches, ops = [], []
+    for i, date_str in enumerate(dates):
+        if i % 3 == 0:
+            continue
+        @task.branch(task_id=f"do_extra_{date_str}")
+        def do_extra(true_task_id: str, false_task_id: str):
+            return true_task_id if i % 2 == 0 else false_task_id
+        branch = do_extra(f"extra_{date_str}", "fin")
+        branches.append(branch)
+
+        op = EmptyOperator(task_id=f"extra_{date_str}")
+        ops.append(op)
+
+    chain(agg, branches, ops, fin)
+    chain(branches, list(reversed(ops)))
+    chain(branches, sorted(ops, key=lambda x: x.__hash__()))
 
 nhl()
