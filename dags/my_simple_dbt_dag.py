@@ -20,7 +20,6 @@ profile_config = ProfileConfig(
 
 @dag(
     params={"my_name": "Daffy"},
-    max_active_tasks=1,
     schedule=Asset('color_rank') & Asset('current_astronauts')
 )
 def my_simple_dbt_dag():
@@ -37,7 +36,7 @@ def my_simple_dbt_dag():
         operator_args={
             "vars": '{"my_name": {{ params.my_name }} }',
         },
-        default_args={"retries": 2},
+        default_args={"retries": 5, "retry_delay": 10},
     )
 
     do_other_stuff = EmptyOperator(task_id="do_other_stuff")
