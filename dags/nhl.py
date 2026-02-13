@@ -2,7 +2,7 @@
 ## NHL API example DAG
 """
 
-from airflow.sdk import dag, task
+from airflow.sdk import dag, task, TriggerRule
 from pendulum import datetime
 import requests
 import json
@@ -62,7 +62,7 @@ def nhl():
         week_results = show_game.expand(game=process_game.expand(game=get_nhl(date_str)))
         all_weeks.append(week_results)
 
-    @task
+    @task(trigger_rule=TriggerRule.ALL_DONE_MIN_ONE_SUCCESS)
     def summary(weeks: list) -> None:
         "Aggregate all weekly results into one summary"
         all_games = [game for week in weeks for game in week]
