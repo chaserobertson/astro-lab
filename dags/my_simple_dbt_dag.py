@@ -22,6 +22,7 @@ profile_config = ProfileConfig(
     params={"my_name": "Daffy"},
     schedule=Asset('color_rank') & Asset('current_astronauts'),
     max_active_tasks=1,
+    default_args={"queue": "dbt"}
 )
 def my_simple_dbt_dag():
     @task
