@@ -37,6 +37,7 @@ def my_simple_dbt_dag():
             "vars": '{"my_name": {{ params.my_name }} }',
         },
         default_args={"retries": 5, "retry_delay": 10},
+        queue="dbt",
     )
 
     do_other_stuff = EmptyOperator(task_id="do_other_stuff")
