@@ -10,6 +10,9 @@ airflow:
     - conn_id: my_local_duckdb_conn
       conn_type: duckdb
       conn_host: include/my_garden_ducks.db
+    - conn_id: dbt_duckdb_conn
+      conn_type: duckdb
+      conn_host: include/dbt/duck.db
   pools:
     - pool_name:
       pool_slot:
