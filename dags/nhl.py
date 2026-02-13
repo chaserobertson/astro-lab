@@ -17,7 +17,7 @@ import pendulum
 )
 def nhl():
     all_weeks = []
-    for week_stamp in pendulum.interval(pendulum.now().subtract(months=5), pendulum.now()).range("weeks"):
+    for week_stamp in pendulum.interval(pendulum.now().subtract(months=4), pendulum.now()).range("weeks"):
         date_str = week_stamp.strftime("%Y-%m-%d")
 
         @task(task_id=f"get_nhl_{date_str}")
