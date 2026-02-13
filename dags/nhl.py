@@ -17,7 +17,7 @@ import pendulum
 )
 def nhl():
     all_weeks = []
-    for week_stamp in pendulum.interval(pendulum.now().subtract(months=6), pendulum.now()).range("weeks"):
+    for week_stamp in pendulum.interval(pendulum.now().subtract(months=5), pendulum.now()).range("weeks"):
         date_str = week_stamp.strftime("%Y-%m-%d")
 
         @task(task_id=f"get_nhl_{date_str}")
@@ -54,12 +54,7 @@ def nhl():
             )
             return details
 
-        @task(task_id=f"show_game_{date_str}")
-        def show_game(game: dict) -> dict:
-            print(game)
-            return game
-
-        week_results = show_game.expand(game=process_game.expand(game=get_nhl(date_str)))
+        week_results = process_game.expand(game=get_nhl(date_str))
         all_weeks.append(week_results)
 
     @task(trigger_rule=TriggerRule.ALL_DONE_MIN_ONE_SUCCESS)
