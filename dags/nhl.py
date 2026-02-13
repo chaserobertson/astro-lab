@@ -57,7 +57,7 @@ def nhl():
         week_results = process_game.expand(game=get_nhl(date_str))
         all_weeks.append(week_results)
 
-    @task(trigger_rule=TriggerRule.ALL_DONE_MIN_ONE_SUCCESS)
+    @task(trigger_rule=TriggerRule.ALL_DONE)
     def summary(weeks: list) -> None:
         "Aggregate all weekly results into one summary"
         all_games = [game for week in weeks for game in week]
